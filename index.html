@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apex Dodger 3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <div id="screen-home" class="screen active">
+        <div class="menu-box">
+            <h1>APEX DODGER</h1>
+            <h2>3D RACER</h2>
+            <p>Schiva gli ostacoli in pista alla massima velocità. Inserisci il tuo nickname ed entra nella classifica globale!</p>
+            
+            <input type="text" id="nickname-input" placeholder="IL TUO NICKNAME" maxlength="14" autocomplete="off">
+            <button onclick="iniziaAvventura()">Inizia Gara</button>
+
+            <div id="leaderboard-container">
+                <h3>CLASSIFICA GLOBALE</h3>
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%">Pos</th>
+                            <th style="width: 50%">Pilota</th>
+                            <th style="width: 30%">Punti</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <tr>
+                            <td colspan="3" style="text-align:center; color:#888;">Caricamento record online...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div id="live-score-ui">SCORE: <span id="score-display">0</span></div>
+        <div id="game3d-container"></div>
+    </div>
+
+    <div id="screen-gameover" class="screen">
+        <div class="menu-box">
+            <h1 class="text-danger">CRASH!</h1>
+            <h2>GAME OVER</h2>
+            <p class="score-summary">Hai totalizzato <span id="final-score" class="highlight">0</span> punti!</p>
+            <button onclick="iniziaAvventura()">Riprova</button>
+            <button onclick="ritornaAllaHome()" style="background: #444; color: #fff; margin-top: 5px;">Torna al Menu</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
