@@ -145,18 +145,60 @@ function aggiornaClassificaVisiva() {
     });
 }
 
+// ==========================================
+// SALVATAGGIO CLOUD E NOTIFICA TELEGRAM
+// ==========================================
 function salvaPunteggioOnline(nickname, punti) {
     if (!nickname) return;
     const utenteRef = database.ref("classifica/" + nickname);
     
+    // =============================================================
+    // INSERISCI QUI LE TUE CREDENZIALI DI TELEGRAM
+    // =============================================================
+    const TELEGRAM_TOKEN = "INCOLLA_QUI_IL_TOKEN_DI_BOTFATHER";
+    const TELEGRAM_CHAT_ID = "INCOLLA_QUI_IL_TUO_ID_USERINFOBOT";
+    // =============================================================
+
     utenteRef.once("value", (snapshot) => {
+        let vecchioRecord = 0;
         if (snapshot.exists()) {
-            const recordPrecedente = snapshot.val().punti;
-            if (punti > recordPrecedente) {
-                utenteRef.set({ punti: punti, timestamp: Date.now() });
-            }
-        } else {
-            utenteRef.set({ punti: punti, timestamp: Date.now() });
+            vecchioRecord = snapshot.val().punti;
+        }
+
+        // Procediamo se è un nuovo utente o se ha battuto il proprio record precedente
+        if (punti > vecchioRecord || !snapshot.exists()) {
+            utenteRef.set({ punti: punti, timestamp: Date.now() }).then(() => {
+                
+                // Dopo il salvataggio, calcoliamo la posizione in classifica per la notifica
+                database.ref("classifica").orderByChild("punti").once("value", (classificaSnapshot) => {
+                    let lista = [];
+                    classificaSnapshot.forEach((child) => {
+                        lista.push({ nickname: child.key, punti: child.val().punti });
+                    });
+                    lista.reverse(); // Ordina i punteggi dal più alto al più basso
+
+                    // Trova la posizione del giocatore attuale
+                    let posizione = lista.findIndex(g => g.nickname.toLowerCase() === nickname.toLowerCase()) + 1;
+
+                    // Compone il testo del messaggio per Telegram
+                    let testoNotifica = `🏎️ *Nuovo Record su Apex Dodger 3D!*\n\n` +
+                                        `👤 *Pilota:* \`${nickname}\`\n` +
+                                        `🏆 *Punteggio:* ${punti} punti\n` +
+                                        `📊 *Posizione Generale:* ${posizione}° posto`;
+
+                    // Invia la notifica asincrona alle API di Telegram
+                    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: TELEGRAM_CHAT_ID,
+                            text: testoNotifica,
+                            parse_mode: 'Markdown'
+                        })
+                    }).catch(err => console.error("Errore invio notifica Telegram:", err));
+                });
+
+            });
         }
     });
 }
@@ -289,7 +331,7 @@ function init3D() {
     const dettaglioMuso = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.5), matBiancoDettagli); dettaglioMuso.position.set(0, 0.23, -0.8); auto3D.add(dettaglioMuso);
     const abitacolo = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.35), matNeroAbitacolo); abitacolo.position.set(0, 0.32, -0.05); auto3D.add(abitacolo);
     const halo = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 4, 8), matBiancoDettagli); halo.rotation.x = Math.PI / 2; halo.position.set(0, 0.36, -0.15); auto3D.add(halo);
-    const airbox = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.25), matRossoAcceso); airbox.position.set(0, 0.44, 0.18); auto3D.add(airbox);
+    const airbox = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.25), matRossoAcceso); airbox.position.set(0, 0.44, 0.18); airbox.add(airbox);
     const boccaAirbox = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.02), matNeroAbitacolo); boccaAirbox.position.set(0, 0.45, 0.05); auto3D.add(boccaAirbox);
     
     const panciaSx = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.8), matRossoAcceso); panciaSx.position.set(-0.32, 0.16, 0.05); panciaSx.castShadow = true;
