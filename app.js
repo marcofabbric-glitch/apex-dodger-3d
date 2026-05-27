@@ -155,8 +155,8 @@ function salvaPunteggioOnline(nickname, punti) {
     // =============================================================
     // INSERISCI QUI LE TUE CREDENZIALI DI TELEGRAM
     // =============================================================
-    const TELEGRAM_TOKEN = "INCOLLA_QUI_IL_TOKEN_DI_BOTFATHER";
-    const TELEGRAM_CHAT_ID = "INCOLLA_QUI_IL_TUO_ID_USERINFOBOT";
+    const TELEGRAM_TOKEN = "8913399602:AAGS9nBSRLzJnBo3J0FSDs2_eAi1nYPVaFg";
+    const TELEGRAM_CHAT_ID = "806299533";
     // =============================================================
 
     utenteRef.once("value", (snapshot) => {
