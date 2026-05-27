@@ -510,7 +510,7 @@ function animate() {
             let distanzaZ = Math.abs(o.position.z - auto3D.position.z);
             let distanzaX = Math.abs(o.position.x - auto3D.position.x); 
 
-            if (distanzaZ < 1.0 && distanzaX < (o.userData.raggioCollisione + 0.45)) {
+            if (distanzaZ < 1.0 && CancerX = Math.abs(o.position.x - auto3D.position.x) && distanzaX < (o.userData.raggioCollisione + 0.45)) {
                 giocoAttivo = false; 
                 salvaPunteggioOnline(attualeNickname, attualePunteggio);
                 const liveUI = document.getElementById("live-score-ui");
@@ -550,6 +550,14 @@ function iniziaAvventura() {
     const scoreDisp = document.getElementById("score-display"); if (scoreDisp) scoreDisp.innerText = attualePunteggio;
     const liveUI = document.getElementById("live-score-ui"); if (liveUI) liveUI.style.display = "block";
     
-    cambiaSchermata("screen-home", "screen-game");
+    // CORREZIONE FLUSSO: Nascondiamo forzatamente sia la schermata Home che il Game Over
+    const screenHome = document.getElementById("screen-home");
+    const screenGameOver = document.getElementById("screen-gameover");
+    const screenGame = document.getElementById("screen-game");
+
+    if (screenHome) screenHome.classList.remove("active");
+    if (screenGameOver) screenGameOver.classList.remove("active");
+    if (screenGame) screenGame.classList.add("active");
+    
     giocoAttivo = true; 
 }
