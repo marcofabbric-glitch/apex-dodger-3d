@@ -146,19 +146,12 @@ function aggiornaClassificaVisiva() {
 }
 
 // ==========================================
-// SALVATAGGIO CLOUD E NOTIFICA TELEGRAM
+// SALVATAGGIO CLOUD (TELEGRAM RIMOSSO)
 // ==========================================
 function salvaPunteggioOnline(nickname, punti) {
     if (!nickname) return;
     const utenteRef = database.ref("classifica/" + nickname);
     
-    // =============================================================
-    // INSERISCI QUI LE TUE CREDENZIALI DI TELEGRAM
-    // =============================================================
-    const TELEGRAM_TOKEN = "8913399602:AAGS9nBSRLzJnBo3J0FSDs2_eAi1nYPVaFg";
-    const TELEGRAM_CHAT_ID = "806299533";
-    // =============================================================
-
     utenteRef.once("value", (snapshot) => {
         let vecchioRecord = 0;
         if (snapshot.exists()) {
@@ -167,38 +160,7 @@ function salvaPunteggioOnline(nickname, punti) {
 
         // Procediamo se è un nuovo utente o se ha battuto il proprio record precedente
         if (punti > vecchioRecord || !snapshot.exists()) {
-            utenteRef.set({ punti: punti, timestamp: Date.now() }).then(() => {
-                
-                // Dopo il salvataggio, calcoliamo la posizione in classifica per la notifica
-                database.ref("classifica").orderByChild("punti").once("value", (classificaSnapshot) => {
-                    let lista = [];
-                    classificaSnapshot.forEach((child) => {
-                        lista.push({ nickname: child.key, punti: child.val().punti });
-                    });
-                    lista.reverse(); // Ordina i punteggi dal più alto al più basso
-
-                    // Trova la posizione del giocatore attuale
-                    let posizione = lista.findIndex(g => g.nickname.toLowerCase() === nickname.toLowerCase()) + 1;
-
-                    // Compone il testo del messaggio per Telegram
-                    let testoNotifica = `🏎️ *Nuovo Record su Apex Dodger 3D!*\n\n` +
-                                        `👤 *Pilota:* \`${nickname}\`\n` +
-                                        `🏆 *Punteggio:* ${punti} punti\n` +
-                                        `📊 *Posizione Generale:* ${posizione}° posto`;
-
-                    // Invia la notifica asincrona alle API di Telegram
-                    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chat_id: TELEGRAM_CHAT_ID,
-                            text: testoNotifica,
-                            parse_mode: 'Markdown'
-                        })
-                    }).catch(err => console.error("Errore invio notifica Telegram:", err));
-                });
-
-            });
+            utenteRef.set({ punti: punti, timestamp: Date.now() });
         }
     });
 }
@@ -331,7 +293,9 @@ function init3D() {
     const dettaglioMuso = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.5), matBiancoDettagli); dettaglioMuso.position.set(0, 0.23, -0.8); auto3D.add(dettaglioMuso);
     const abitacolo = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.35), matNeroAbitacolo); abitacolo.position.set(0, 0.32, -0.05); auto3D.add(abitacolo);
     const halo = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 4, 8), matBiancoDettagli); halo.rotation.x = Math.PI / 2; halo.position.set(0, 0.36, -0.15); auto3D.add(halo);
-    const airbox = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.25), matRossoAcceso); airbox.position.set(0, 0.44, 0.18); airbox.add(airbox);
+    
+    // CORREZIONE BUG STRUTTURALE AIRBOX (Rimosso add ricorsivo a se stesso)
+    const airbox = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.25), matRossoAcceso); airbox.position.set(0, 0.44, 0.18); auto3D.add(airbox);
     const boccaAirbox = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.02), matNeroAbitacolo); boccaAirbox.position.set(0, 0.45, 0.05); auto3D.add(boccaAirbox);
     
     const panciaSx = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.8), matRossoAcceso); panciaSx.position.set(-0.32, 0.16, 0.05); panciaSx.castShadow = true;
@@ -510,7 +474,7 @@ function animate() {
             let distanzaZ = Math.abs(o.position.z - auto3D.position.z);
             let distanzaX = Math.abs(o.position.x - auto3D.position.x); 
 
-            if (distanzaZ < 1.0 && CancerX = Math.abs(o.position.x - auto3D.position.x) && distanzaX < (o.userData.raggioCollisione + 0.45)) {
+            if (distanzaZ < 1.0 && distanzaX < (o.userData.raggioCollisione + 0.45)) {
                 giocoAttivo = false; 
                 salvaPunteggioOnline(attualeNickname, attualePunteggio);
                 const liveUI = document.getElementById("live-score-ui");
@@ -534,30 +498,53 @@ function animate() {
 window.addEventListener('resize', () => { if (telecamera && renderer) { telecamera.aspect = window.innerWidth / window.innerHeight; telecamera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); } });
 
 // ==========================================
-// INTERFACCIA UTENTE
+// INTERFACCIA UTENTE (RISOLTO BUG RIPROVA)
 // ==========================================
 function iniziaAvventura() {
-    const inputNome = document.getElementById("nickname-input").value.trim();
+    let inputNome = "";
+    const inputElement = document.getElementById("nickname-input");
+    
+    // Se siamo nella schermata GameOver, recuperiamo il nome salvato in precedenza
+    if (!inputElement || inputElement.value.trim() === "") {
+        inputNome = localStorage.getItem("nicknameGioco") || "";
+    } else {
+        inputNome = inputElement.value.trim();
+    }
+    
     if (inputNome === "") { alert("Inserisci un nickname!"); return; }
 
     localStorage.setItem("nicknameGioco", inputNome);
     attualeNickname = inputNome;
     
-    ostacoli3D.forEach(o => scena.remove(o)); ostacoli3D = [];
-    attualePunteggio = 0; velocitaGioco = VELOCITA_INIZIALE; frequenzaSpawnAttuale = 40;
+    // Svuota in modo pulito tutti gli ostacoli rimasti dalla partita precedente
+    ostacoli3D.forEach(o => scena.remove(o)); 
+    ostacoli3D = [];
+    
+    // RESET DEI TIMER E DELLE VARIABILI DI GIOCO
+    attualePunteggio = 0; 
+    velocitaGioco = VELOCITA_INIZIALE; 
+    frequenzaSpawnAttuale = 40;
+    spawnTimer = 0;
+    frameCounterPunti = 0;
+    
+    // Resetta la posizione della macchina al centro della pista
     if (auto3D) auto3D.position.x = 0; 
+    
+    // Riposiziona correttamente i tratti della strada per evitare buchi visivi al riavvio
+    lineeStrada.forEach((tratto, i) => {
+        tratto.position.z = -i * 10;
+    });
     
     const scoreDisp = document.getElementById("score-display"); if (scoreDisp) scoreDisp.innerText = attualePunteggio;
     const liveUI = document.getElementById("live-score-ui"); if (liveUI) liveUI.style.display = "block";
     
-    // CORREZIONE FLUSSO: Nascondiamo forzatamente sia la schermata Home che il Game Over
-    const screenHome = document.getElementById("screen-home");
-    const screenGameOver = document.getElementById("screen-gameover");
-    const screenGame = document.getElementById("screen-game");
-
-    if (screenHome) screenHome.classList.remove("active");
-    if (screenGameOver) screenGameOver.classList.remove("active");
-    if (screenGame) screenGame.classList.add("active");
+    // Controlla da quale schermata stiamo ripartendo per effettuare il cambio corretto
+    const homeScreen = document.getElementById("screen-home");
+    if (homeScreen && homeScreen.classList.contains("active")) {
+        cambiaSchermata("screen-home", "screen-game");
+    } else {
+        cambiaSchermata("screen-gameover", "screen-game");
+    }
     
     giocoAttivo = true; 
 }
