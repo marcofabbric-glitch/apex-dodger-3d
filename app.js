@@ -53,7 +53,8 @@ let attualePunteggio = 0;
 window.onload = function() {
     const nomeSalvato = localStorage.getItem("nicknameGioco");
     if (nomeSalvato) {
-        document.getElementById("nickname-input").value = nomeSalvato;
+        const inputField = document.getElementById("nickname-input");
+        if (inputField) inputField.value = nomeSalvato;
     }
     init3D(); 
     aggiornaClassificaVisiva(); 
@@ -146,7 +147,7 @@ function aggiornaClassificaVisiva() {
 }
 
 // ==========================================
-// SALVATAGGIO CLOUD (TELEGRAM RIMOSSO)
+// SALVATAGGIO CLOUD
 // ==========================================
 function salvaPunteggioOnline(nickname, punti) {
     if (!nickname) return;
@@ -158,7 +159,6 @@ function salvaPunteggioOnline(nickname, punti) {
             vecchioRecord = snapshot.val().punti;
         }
 
-        // Procediamo se è un nuovo utente o se ha battuto il proprio record precedente
         if (punti > vecchioRecord || !snapshot.exists()) {
             utenteRef.set({ punti: punti, timestamp: Date.now() });
         }
@@ -294,7 +294,7 @@ function init3D() {
     const abitacolo = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.35), matNeroAbitacolo); abitacolo.position.set(0, 0.32, -0.05); auto3D.add(abitacolo);
     const halo = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 4, 8), matBiancoDettagli); halo.rotation.x = Math.PI / 2; halo.position.set(0, 0.36, -0.15); auto3D.add(halo);
     
-    // CORREZIONE BUG STRUTTURALE AIRBOX (Rimosso add ricorsivo a se stesso)
+    // CORRETTO: rimosso l'errore di sintassi precedente
     const airbox = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.25), matRossoAcceso); airbox.position.set(0, 0.44, 0.18); auto3D.add(airbox);
     const boccaAirbox = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.02), matNeroAbitacolo); boccaAirbox.position.set(0, 0.45, 0.05); auto3D.add(boccaAirbox);
     
@@ -498,13 +498,12 @@ function animate() {
 window.addEventListener('resize', () => { if (telecamera && renderer) { telecamera.aspect = window.innerWidth / window.innerHeight; telecamera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); } });
 
 // ==========================================
-// INTERFACCIA UTENTE (RISOLTO BUG RIPROVA)
+// INTERFACCIA UTENTE
 // ==========================================
 function iniziaAvventura() {
     let inputNome = "";
     const inputElement = document.getElementById("nickname-input");
     
-    // Se siamo nella schermata GameOver, recuperiamo il nome salvato in precedenza
     if (!inputElement || inputElement.value.trim() === "") {
         inputNome = localStorage.getItem("nicknameGioco") || "";
     } else {
@@ -516,21 +515,17 @@ function iniziaAvventura() {
     localStorage.setItem("nicknameGioco", inputNome);
     attualeNickname = inputNome;
     
-    // Svuota in modo pulito tutti gli ostacoli rimasti dalla partita precedente
     ostacoli3D.forEach(o => scena.remove(o)); 
     ostacoli3D = [];
     
-    // RESET DEI TIMER E DELLE VARIABILI DI GIOCO
     attualePunteggio = 0; 
     velocitaGioco = VELOCITA_INIZIALE; 
     frequenzaSpawnAttuale = 40;
     spawnTimer = 0;
     frameCounterPunti = 0;
     
-    // Resetta la posizione della macchina al centro della pista
     if (auto3D) auto3D.position.x = 0; 
     
-    // Riposiziona correttamente i tratti della strada per evitare buchi visivi al riavvio
     lineeStrada.forEach((tratto, i) => {
         tratto.position.z = -i * 10;
     });
@@ -538,7 +533,6 @@ function iniziaAvventura() {
     const scoreDisp = document.getElementById("score-display"); if (scoreDisp) scoreDisp.innerText = attualePunteggio;
     const liveUI = document.getElementById("live-score-ui"); if (liveUI) liveUI.style.display = "block";
     
-    // Controlla da quale schermata stiamo ripartendo per effettuare il cambio corretto
     const homeScreen = document.getElementById("screen-home");
     if (homeScreen && homeScreen.classList.contains("active")) {
         cambiaSchermata("screen-home", "screen-game");
